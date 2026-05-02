@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deudas Wizard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== THEMES ===== */
+:root {
+  --bg:#0a0f0d;--surface:#111915;--card:#161e1a;--border:#1f2e28;
+  --accent:#00e07a;--accent2:#00c46a;--accent-rgb:0,224,122;
+  --danger:#ff4d4d;--warning:#ffb800;--text:#e8f0ec;--muted:#6b8a78;--wa:#25D366;
+  --grad1:rgba(0,224,122,0.07);--grad2:rgba(0,196,106,0.05);
+}
+[data-theme="light"]{--bg:#f0f4f2;--surface:#fff;--card:#fff;--border:#d8e8df;--accent:#00a855;--accent2:#008f46;--accent-rgb:0,168,85;--text:#0f1e18;--muted:#5a7a68;--grad1:rgba(0,168,85,0.08);--grad2:rgba(0,143,70,0.05);}
+[data-theme="blue"]{--bg:#090d14;--surface:#0f1520;--card:#141c2a;--border:#1e2d42;--accent:#4da6ff;--accent2:#2d8fe8;--accent-rgb:77,166,255;--text:#ddeeff;--muted:#5a7898;--grad1:rgba(77,166,255,0.08);--grad2:rgba(45,143,232,0.05);}
+[data-theme="purple"]{--bg:#0d0a14;--surface:#140f1e;--card:#1a1428;--border:#2a1e40;--accent:#a855f7;--accent2:#9333ea;--accent-rgb:168,85,247;--text:#ede8ff;--muted:#7a6898;--grad1:rgba(168,85,247,0.08);--grad2:rgba(147,51,234,0.05);}
+[data-theme="red"]{--bg:#140909;--surface:#1e0f0f;--card:#281414;--border:#401e1e;--accent:#ff6b6b;--accent2:#e85050;--accent-rgb:255,107,107;--text:#ffe8e8;--muted:#986868;--grad1:rgba(255,107,107,0.08);--grad2:rgba(232,80,80,0.05);}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% 0%,var(--grad1) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,var(--grad2) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.container{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 16px 100px;}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 20px rgba(var(--accent-rgb),.3);}
+.logo h1{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px;}
+.logo h1 span{color:var(--accent);}
+.header-actions{display:flex;gap:8px;}
+.header-btn{width:36px;height:36px;background:var(--card);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;transition:all .2s;color:var(--text);}
+.header-btn:hover{border-color:var(--accent);transform:scale(1.05);}
+
+/* SUMMARY */
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.sum-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;position:relative;overflow:hidden;transition:background .3s,border-color .3s;}
+.sum-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent);}
+.sum-card.danger::after{background:linear-gradient(90deg,var(--danger),transparent);}
+.sum-card.warning::after{background:linear-gradient(90deg,var(--warning),transparent);}
+.sum-card.purple::after{background:linear-gradient(90deg,#a855f7,transparent);}
+.sum-label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.sum-value{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;}
+.sum-card.danger .sum-value{color:var(--danger);}
+.sum-card.warning .sum-value{color:var(--warning);}
+.sum-card.purple .sum-value{color:#a855f7;}
+
+/* ALERT */
+.alert-banner{background:linear-gradient(135deg,rgba(255,184,0,.12),rgba(255,184,0,.05));border:1px solid rgba(255,184,0,.3);border-radius:14px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;animation:pulse-border 2s ease-in-out infinite;}
+@keyframes pulse-border{0%,100%{border-color:rgba(255,184,0,.3);}50%{border-color:rgba(255,184,0,.7);}}
+.alert-icon{font-size:22px;}
+.alert-text{font-size:13px;color:var(--warning);font-weight:500;}
+.alert-text strong{display:block;font-size:14px;margin-bottom:2px;}
+.alert-wa-btn{margin-left:auto;background:var(--wa);color:#fff;border:none;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+
+/* TABS */
+.view-tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:4px;}
+.view-tab{flex:1;padding:8px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;}
+.view-tab.active{background:rgba(var(--accent-rgb),.15);color:var(--accent);}
+
+/* CHART */
+.chart-container{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:20px;}
+.chart-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;}
+.chart-bars{display:flex;align-items:flex-end;gap:8px;height:100px;}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.chart-bar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--accent),var(--accent2));min-height:4px;transition:height .5s cubic-bezier(.34,1.56,.64,1);}
+.chart-bar.danger{background:linear-gradient(180deg,var(--danger),#c03030);}
+.chart-bar.warning{background:linear-gradient(180deg,var(--warning),#c08800);}
+.chart-label{font-size:9px;color:var(--muted);text-align:center;}
+.chart-legend{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+
+/* SECTION */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
+.section-btn{font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600;}
+
+/* DEBTOR CARDS */
+.debtor-list{display:flex;flex-direction:column;gap:12px;}
+.debtor-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;transition:transform .2s,border-color .2s,background .3s;animation:slideIn .3s ease both;}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.debtor-card:hover{transform:translateY(-2px);border-color:rgba(var(--accent-rgb),.3);}
+.debtor-card.overdue{border-color:rgba(255,77,77,.3);}
+.debtor-card.due-today{border-color:rgba(255,184,0,.3);}
+.debtor-card.due-soon{border-color:rgba(var(--accent-rgb),.25);}
+
+.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.debtor-info{display:flex;align-items:center;gap:10px;}
+.avatar{width:40px;height:40px;background:linear-gradient(135deg,rgba(var(--accent-rgb),.15),rgba(var(--accent-rgb),.05));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--accent);border:1px solid var(--border);flex-shrink:0;}
+.debtor-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;}
+.debtor-phone{font-size:12px;color:var(--muted);margin-top:1px;}
+
+.status-badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;}
+.badge-ok{background:rgba(var(--accent-rgb),.12);color:var(--accent);}
+.badge-soon{background:rgba(var(--accent-rgb),.08);color:var(--accent);border:1px solid rgba(var(--accent-rgb),.2);}
+.badge-today{background:rgba(255,184,0,.12);color:var(--warning);}
+.badge-overdue{background:rgba(255,77,77,.12);color:var(--danger);}
+
+/* PROGRESS BAR */
+.progress-wrap{margin-bottom:12px;}
+.progress-info{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.progress-bar-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.progress-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s ease;}
+.progress-bar-fill.partial{background:linear-gradient(90deg,var(--warning),#c08800);}
+
+.card-amounts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.amount-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;}
+.amount-value{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;}
+.amount-value.green{color:var(--accent);}
+.amount-value.red{color:var(--danger);}
+.amount-value.orange{color:var(--warning);}
+
+.date-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap;}
+.date-row.overdue-date{color:var(--danger);}
+.date-row.today-date{color:var(--warning);}
+
+/* NOTA INTERNA */
+.internal-note{background:rgba(var(--accent-rgb),.06);border:1px solid rgba(var(--accent-rgb),.12);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;gap:6px;}
+
+/* CUOTAS */
+.cuotas-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;}
+.cuota-chip{font-size:10px;padding:3px 8px;border-radius:12px;font-weight:600;}
+.cuota-paid{background:rgba(var(--accent-rgb),.15);color:var(--accent);}
+.cuota-pending{background:var(--border);color:var(--muted);}
+.cuota-overdue{background:rgba(255,77,77,.12);color:var(--danger);}
+
+.card-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.btn{padding:9px 11px;border-radius:11px;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .2s;white-space:nowrap;}
+.btn-wa{background:var(--wa);color:#fff;flex:1;}
+.btn-wa:hover{background:#1fb854;transform:scale(1.02);}
+.btn-partial{background:rgba(255,184,0,.1);color:var(--warning);border:1px solid rgba(255,184,0,.2);flex:0;padding:9px 11px;}
+.btn-partial:hover{background:rgba(255,184,0,.2);}
+.btn-history{background:rgba(var(--accent-rgb),.08);color:var(--accent);border:1px solid rgba(var(--accent-rgb),.15);flex:0;padding:9px 11px;}
+.btn-history:hover{background:rgba(var(--accent-rgb),.15);}
+.btn-delete{background:rgba(255,77,77,.1);color:var(--danger);border:1px solid rgba(255,77,77,.2);flex:0;padding:9px 11px;}
+.btn-delete:hover{background:rgba(255,77,77,.2);}
+.btn-paid{background:rgba(var(--accent-rgb),.1);color:var(--accent);border:1px solid rgba(var(--accent-rgb),.2);flex:0;padding:9px 11px;}
+.btn-paid:hover{background:rgba(var(--accent-rgb),.2);}
+
+/* FAB */
+.fab{position:fixed;bottom:28px;right:20px;width:58px;height:58px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:18px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--bg);box-shadow:0 8px 30px rgba(var(--accent-rgb),.4);transition:all .2s;z-index:100;}
+.fab:hover{transform:scale(1.08) rotate(5deg);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;transform:translateY(30px);transition:transform .3s cubic-bezier(.34,1.56,.64,1);max-height:90vh;overflow-y:auto;}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-center{align-items:center;}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+.modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px;text-align:center;}
+
+/* FORM */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:block;}
+.form-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color .2s;}
+.form-input:focus{border-color:var(--accent);}
+.form-input::placeholder{color:var(--muted);}
+textarea.form-input{resize:vertical;min-height:90px;line-height:1.5;font-size:14px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.btn-submit{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--bg);border:none;border-radius:14px;padding:15px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;transition:all .2s;box-shadow:0 4px 20px rgba(var(--accent-rgb),.3);}
+.btn-submit:hover{transform:translateY(-1px);}
+.btn-secondary{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all .2s;margin-top:8px;}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;}
+.toggle-label{font-size:14px;}
+.toggle{position:relative;width:44px;height:24px;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.3s;}
+.toggle-slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.toggle-slider{background:var(--accent);}
+input:checked+.toggle-slider::before{transform:translateX(20px);}
+
+/* SETTINGS */
+.settings-section{margin-bottom:22px;}
+.settings-section-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.divider{height:1px;background:var(--border);margin:18px 0;}
+
+.theme-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.theme-item{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;}
+.theme-btn{width:100%;aspect-ratio:1;border-radius:14px;border:2px solid transparent;position:relative;transition:all .2s;overflow:hidden;}
+.theme-btn:hover{transform:scale(1.08);}
+.theme-btn.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.25);}
+.theme-check{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0;background:rgba(0,0,0,.3);border-radius:12px;}
+.theme-btn.active .theme-check{opacity:1;}
+.theme-preview{width:100%;height:100%;border-radius:12px;display:flex;flex-direction:column;padding:7px;gap:5px;}
+.tp-bar{height:6px;border-radius:3px;width:70%;}
+.tp-bar2{height:4px;border-radius:3px;width:50%;opacity:.5;}
+.tp-dot{width:10px;height:10px;border-radius:50%;margin-top:auto;}
+.theme-label{font-size:10px;color:var(--muted);}
+
+.msg-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.msg-tab{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .2s;}
+.msg-tab.active{background:rgba(var(--accent-rgb),.15);color:var(--accent);border-color:rgba(var(--accent-rgb),.3);}
+.msg-hint{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.msg-hint code{background:rgba(var(--accent-rgb),.12);color:var(--accent);border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace;}
+
+/* PIN */
+.pin-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;}
+.pin-logo{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;}
+.pin-logo span{color:var(--accent);}
+.pin-dots{display:flex;gap:14px;}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);transition:all .2s;}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent);}
+.pin-dot.error{background:var(--danger);border-color:var(--danger);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:260px;}
+.pin-key{height:64px;background:var(--card);border:1px solid var(--border);border-radius:16px;font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.pin-key:active{transform:scale(.93);background:rgba(var(--accent-rgb),.1);border-color:var(--accent);}
+.pin-hint{font-size:13px;color:var(--muted);text-align:center;}
+.pin-link{font-size:13px;color:var(--accent);cursor:pointer;text-decoration:underline;}
+
+/* HISTORY */
+.history-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;}
+.history-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;}
+.history-date{font-size:11px;color:var(--muted);}
+.history-amount{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--accent);}
+.history-type{font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(var(--accent-rgb),.1);color:var(--accent);}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-state p{font-size:15px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:var(--bg);padding:10px 20px;border-radius:30px;font-weight:600;font-size:13px;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* MONEDA SELECTOR */
+.currency-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.currency-btn{padding:10px 8px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;}
+.currency-btn.active{background:rgba(var(--accent-rgb),.15);color:var(--accent);border-color:rgba(var(--accent-rgb),.3);}
+
+/* REMINDER SLIDER */
+.reminder-row{display:flex;align-items:center;gap:12px;}
+.reminder-val{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--accent);min-width:30px;text-align:center;}
+input[type=range]{flex:1;accent-color:var(--accent);}
+
+/* EXPORT BTNS */
+.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.export-btn{padding:14px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;}
+.export-btn:hover{border-color:var(--accent);color:var(--accent);}
+.export-btn span{display:block;font-size:22px;margin-bottom:4px;}
+
+@media(max-width:360px){.card-amounts{grid-template-columns:1fr 1fr;}.form-row3{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div class="pin-screen" id="pin-screen">
+  <div class="pin-logo">💸 Deudas <span>Wizard</span></div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-hint" id="pin-hint">Ingresa tu PIN de 4 dígitos</div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pinPress('1')">1</button>
+    <button class="pin-key" onclick="pinPress('2')">2</button>
+    <button class="pin-key" onclick="pinPress('3')">3</button>
+    <button class="pin-key" onclick="pinPress('4')">4</button>
+    <button class="pin-key" onclick="pinPress('5')">5</button>
+    <button class="pin-key" onclick="pinPress('6')">6</button>
+    <button class="pin-key" onclick="pinPress('7')">7</button>
+    <button class="pin-key" onclick="pinPress('8')">8</button>
+    <button class="pin-key" onclick="pinPress('9')">9</button>
+    <button class="pin-key" style="font-size:14px;" onclick="pinPress('del')">⌫</button>
+    <button class="pin-key" onclick="pinPress('0')">0</button>
+    <button class="pin-key" style="font-size:14px;color:var(--muted);" onclick="pinSkip()">—</button>
+  </div>
+  <div id="pin-skip-link"></div>
+</div>
+
+<!-- MAIN APP -->
+<div class="container" id="app" style="display:none">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">💸</div>
+      <h1>Deudas <span>Wizard</span></h1>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="openModal('settings-modal')" title="Ajustes">⚙️</button>
+      <button class="header-btn" onclick="lockApp()" title="Bloquear">🔒</button>
+    </div>
+  </header>
+
+  <div class="summary" id="summary-grid"></div>
+  <div id="alert-container"></div>
+
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="switchView('deudores',this)">👥 Deudores</button>
+    <button class="view-tab" onclick="switchView('graficas',this)">📊 Gráficas</button>
+  </div>
+
+  <!-- DEUDORES VIEW -->
+  <div id="view-deudores">
+    <div class="section-header">
+      <span class="section-title">Deudores</span>
+      <button class="section-btn" onclick="openModal('export-modal')">📤 Exportar</button>
+    </div>
+    <div class="debtor-list" id="debtor-list">
+      <div class="empty-state"><div class="empty-icon">🧾</div><p>No hay deudores.<br>Toca <strong>+</strong> para agregar.</p></div>
+    </div>
+  </div>
+
+  <!-- GRAFICAS VIEW -->
+  <div id="view-graficas" style="display:none">
+    <div class="chart-container" id="chart-estado"></div>
+    <div class="chart-container" id="chart-montos"></div>
+  </div>
+</div>
+
+<button class="fab" id="fab-btn" onclick="openModal('add-modal')" style="display:none">+</button>
+
+<!-- ===== MODALS ===== -->
+
+<!-- ADD DEUDOR -->
+<div class="modal-overlay" id="add-modal" onclick="closeOnOverlay(event,'add-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo Deudor</div>
+    <div class="form-group"><label class="form-label">Nombre completo</label><input class="form-input" id="inp-nombre" type="text" placeholder="Ej: Juan Pérez"></div>
+    <div class="form-group"><label class="form-label">Teléfono (con código de país)</label><input class="form-input" id="inp-telefono" type="tel" placeholder="Ej: 5219991234567"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Monto ($)</label><input class="form-input" id="inp-monto" type="number" placeholder="0.00"></div>
+      <div class="form-group"><label class="form-label">Interés (%)</label><input class="form-input" id="inp-interes" type="number" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Mora diaria (%)</label><input class="form-input" id="inp-mora" type="number" placeholder="0" step="0.1"></div>
+      <div class="form-group"><label class="form-label">Fecha de pago</label><input class="form-input" id="inp-fecha" type="date"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">¿Pago en cuotas?</label>
+      <div class="form-row">
+        <input class="form-input" id="inp-cuotas" type="number" placeholder="1 = pago único" min="1" max="24">
+        <input class="form-input" id="inp-frecuencia" type="number" placeholder="días entre cuotas">
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Nota pública (va en WhatsApp)</label><input class="form-input" id="inp-nota" type="text" placeholder="Ej: Préstamo para negocio"></div>
+    <div class="form-group"><label class="form-label">📝 Nota interna (solo tú la ves)</label><input class="form-input" id="inp-nota-interna" type="text" placeholder="Ej: Historial de pagos tardíos"></div>
+    <button class="btn-submit" onclick="addDebtor()">Guardar Deudor</button>
+  </div>
+</div>
+
+<!-- PAGO PARCIAL -->
+<div class="modal-overlay" id="partial-modal" onclick="closeOnOverlay(event,'partial-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💵 Registrar Abono</div>
+    <div id="partial-info" style="text-align:center;margin-bottom:16px;color:var(--muted);font-size:14px;"></div>
+    <div class="form-group"><label class="form-label">Monto del abono ($)</label><input class="form-input" id="inp-abono" type="number" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">Nota del abono (opcional)</label><input class="form-input" id="inp-abono-nota" type="text" placeholder="Ej: Transferencia SPEI"></div>
+    <button class="btn-submit" onclick="registerAbono()">Registrar Abono</button>
+  </div>
+</div>
+
+<!-- HISTORIAL -->
+<div class="modal-overlay" id="history-modal" onclick="closeOnOverlay(event,'history-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="history-title">Historial</div>
+    <div class="history-list" id="history-list"></div>
+    <button class="btn-secondary" onclick="closeModal('history-modal')">Cerrar</button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="modal-overlay" id="settings-modal" onclick="closeOnOverlay(event,'settings-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Ajustes</div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">🎨 Tema</div>
+      <div class="theme-grid">
+        <div class="theme-item" onclick="setTheme('dark')"><div class="theme-btn" id="theme-dark"><div class="theme-preview" style="background:#0a0f0d"><div class="tp-bar" style="background:#00e07a"></div><div class="tp-bar2" style="background:#6b8a78"></div><div class="tp-dot" style="background:#00e07a"></div></div><div class="theme-check">✓</div></div><div class="theme-label">Verde</div></div>
+        <div class="theme-item" onclick="setTheme('light')"><div class="theme-btn" id="theme-light"><div class="theme-preview" style="background:#f0f4f2"><div class="tp-bar" style="background:#00a855"></div><div class="tp-bar2" style="background:#5a7a68"></div><div class="tp-dot" style="background:#00a855"></div></div><div class="theme-check">✓</div></div><div class="theme-label">Claro</div></div>
+        <div class="theme-item" onclick="setTheme('blue')"><div class="theme-btn" id="theme-blue"><div class="theme-preview" style="background:#090d14"><div class="tp-bar" style="background:#4da6ff"></div><div class="tp-bar2" style="background:#5a7898"></div><div class="tp-dot" style="background:#4da6ff"></div></div><div class="theme-check">✓</div></div><div class="theme-label">Azul</div></div>
+        <div class="theme-item" onclick="setTheme('purple')"><div class="theme-btn" id="theme-purple"><div class="theme-preview" style="background:#0d0a14"><div class="tp-bar" style="background:#a855f7"></div><div class="tp-bar2" style="background:#7a6898"></div><div class="tp-dot" style="background:#a855f7"></div></div><div class="theme-check">✓</div></div><div class="theme-label">Morado</div></div>
+        <div class="theme-item" onclick="setTheme('red')"><div class="theme-btn" id="theme-red"><div class="theme-preview" style="background:#140909"><div class="tp-bar" style="background:#ff6b6b"></div><div class="tp-bar2" style="background:#986868"></div><div class="tp-dot" style="background:#ff6b6b"></div></div><div class="theme-check">✓</div></div><div class="theme-label">Rojo</div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">💱 Moneda</div>
+      <div class="currency-grid" id="currency-grid"></div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">🔔 Recordatorio (días antes)</div>
+      <div class="reminder-row">
+        <span class="reminder-val" id="reminder-val">1</span>
+        <input type="range" min="1" max="7" value="1" id="reminder-slider" oninput="updateReminder(this.value)">
+        <span style="font-size:12px;color:var(--muted);">7 días</span>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">🔒 PIN de acceso</div>
+      <div class="toggle-row">
+        <span class="toggle-label">Activar PIN</span>
+        <label class="toggle"><input type="checkbox" id="pin-toggle" onchange="togglePin(this.checked)"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pin-change-section" style="display:none">
+        <button class="btn-secondary" onclick="startSetPin()">Cambiar PIN</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">💬 Mensajes WhatsApp</div>
+      <div class="msg-hint">Variables: <code>{nombre}</code> <code>{total}</code> <code>{capital}</code> <code>{interes}</code> <code>{fecha}</code> <code>{nota}</code> <code>{pendiente}</code></div>
+      <div class="msg-tabs">
+        <div class="msg-tab active" onclick="switchMsgTab('soon',this)">🔔 Pronto</div>
+        <div class="msg-tab" onclick="switchMsgTab('today',this)">📅 Hoy</div>
+        <div class="msg-tab" onclick="switchMsgTab('overdue',this)">⚠️ Vencido</div>
+        <div class="msg-tab" onclick="switchMsgTab('ok',this)">✅ General</div>
+      </div>
+      <textarea class="form-input" id="msg-editor" rows="4"></textarea>
+      <button class="btn-submit" onclick="saveMessages()">💾 Guardar</button>
+      <button class="btn-secondary" onclick="resetMsg()">↩ Restaurar por defecto</button>
+    </div>
+    <div class="divider"></div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">💾 Datos</div>
+      <div class="export-grid">
+        <button class="export-btn" onclick="exportJSON()"><span>📦</span>Respaldo JSON</button>
+        <button class="export-btn" onclick="importJSON()"><span>📥</span>Restaurar</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="doImport(event)">
+    </div>
+    <div class="divider"></div>
+    <div class="settings-section">
+      <div class="settings-section-title">📲 Notificaciones Telegram</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+        Recibes un reporte automático al abrir la app (una vez por día) con los deudores vencidos y próximos.
+      </div>
+      <div class="export-grid">
+        <button class="export-btn" onclick="sendTelegramManual()"><span>📤</span>Enviar reporte</button>
+        <button class="export-btn" onclick="testTelegram()"><span>🧪</span>Probar conexión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT -->
+<div class="modal-overlay" id="export-modal" onclick="closeOnOverlay(event,'export-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📤 Exportar</div>
+    <div class="export-grid">
+      <button class="export-btn" onclick="exportCSV()"><span>📊</span>Excel / CSV</button>
+      <button class="export-btn" onclick="exportPDF()"><span>📄</span>Reporte PDF</button>
+      <button class="export-btn" onclick="exportJSON()"><span>📦</span>Respaldo JSON</button>
+      <button class="export-btn" onclick="sendMasivo()"><span>📲</span>Avisar a todos</button>
+      <button class="export-btn" onclick="sendTelegramManual()"><span>🤖</span>Reporte Telegram</button>
+    </div>
+    <button class="btn-secondary" onclick="closeModal('export-modal')">Cerrar</button>
+  </div>
+</div>
+
+<!-- SET PIN -->
+<div class="modal-overlay" id="setpin-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="setpin-title">Crear PIN</div>
+    <div style="display:flex;justify-content:center;gap:14px;margin-bottom:20px;" id="setpin-dots">
+      <div class="pin-dot" id="spd0"></div><div class="pin-dot" id="spd1"></div><div class="pin-dot" id="spd2"></div><div class="pin-dot" id="spd3"></div>
+    </div>
+    <div class="pin-pad" style="margin:0 auto;width:260px;">
+      <button class="pin-key" onclick="setPinPress('1')">1</button><button class="pin-key" onclick="setPinPress('2')">2</button><button class="pin-key" onclick="setPinPress('3')">3</button>
+      <button class="pin-key" onclick="setPinPress('4')">4</button><button class="pin-key" onclick="setPinPress('5')">5</button><button class="pin-key" onclick="setPinPress('6')">6</button>
+      <button class="pin-key" onclick="setPinPress('7')">7</button><button class="pin-key" onclick="setPinPress('8')">8</button><button class="pin-key" onclick="setPinPress('9')">9</button>
+      <div></div><button class="pin-key" onclick="setPinPress('0')">0</button><button class="pin-key" style="font-size:14px" onclick="setPinPress('del')">⌫</button>
+    </div>
+    <button class="btn-secondary" style="margin-top:16px;" onclick="closeModal('setpin-modal')">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let debtors = JSON.parse(localStorage.getItem('dw_debtors')||'[]');
+let settings = JSON.parse(localStorage.getItem('dw_settings')||'null') || {
+  theme:'dark', currency:'MXN', reminderDays:1,
+  pinEnabled:false, pin:'',
+  messages:{
+    soon:'Hola {nombre} 👋, mañana vence tu pago de *{total}*. Por favor prepara la transferencia. ¡Gracias! 😊',
+    today:'Hola {nombre} 👋, *hoy es el día de pago* por *{total}*. Por favor realiza tu pago. ¡Gracias!',
+    overdue:'Hola {nombre}, tu pago de *{total}* venció el {fecha} y aún tienes *{pendiente}* pendiente. Por favor contáctame. Gracias.',
+    ok:'Hola {nombre} 👋, te recordamos tu pago de *{total}* con fecha límite el *{fecha}*. ¡Gracias!'
+  }
+};
+
+const CURRENCIES = {MXN:'$',USD:'$',COP:'$',EUR:'€',ARS:'$',PEN:'S/'};
+let currentView = 'deudores';
+let currentMsgTab = 'soon';
+let pinBuffer = '';
+let setPinBuffer = '';
+let setPinFirst = '';
+let currentPartialId = null;
+let currentHistoryId = null;
+
+function saveData(){ localStorage.setItem('dw_debtors',JSON.stringify(debtors)); }
+function saveSettings(){ localStorage.setItem('dw_settings',JSON.stringify(settings)); }
+function sym(){ return CURRENCIES[settings.currency]||'$'; }
+
+// ===== DATES =====
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function addDays(str,n){ const d=new Date(str); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
+function formatDate(s){ if(!s) return ''; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
+function daysDiff(a,b){ return Math.round((new Date(a)-new Date(b))/(86400000)); }
+
+function formatMoney(n){
+  return sym()+Number(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ===== DEBT CALC =====
+function getBaseTotal(d){ return d.monto*(1+(d.interes/100)); }
+
+function getMoraExtra(d){
+  if(!d.mora || d.mora<=0) return 0;
+  const t=todayStr();
+  if(d.fecha>=t) return 0;
+  const days=daysDiff(t,d.fecha);
+  return getBaseTotal(d)*(d.mora/100)*days;
+}
+
+function getTotal(d){ return getBaseTotal(d)+getMoraExtra(d); }
+
+function getPaid(d){ return (d.pagos||[]).reduce((s,p)=>s+p.monto,0); }
+
+function getPendiente(d){ return Math.max(0, getTotal(d)-getPaid(d)); }
+
+function getStatus(d){
+  const p=getPendiente(d);
+  if(p<=0) return 'paid';
+  const t=todayStr();
+  const remind=addDays(t, settings.reminderDays);
+  if(d.fecha<t) return 'overdue';
+  if(d.fecha===t) return 'today';
+  if(d.fecha<=remind) return 'soon';
+  return 'ok';
+}
+
+function getInitials(n){ return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+
+// ===== PIN =====
+function checkPin(){
+  if(!settings.pinEnabled){ showApp(); return; }
+  const el=document.getElementById('pin-screen');
+  el.style.display='flex';
+  document.getElementById('pin-hint').textContent='Ingresa tu PIN';
+  const skipLink=document.getElementById('pin-skip-link');
+  skipLink.innerHTML='';
+}
+
+function pinSkip(){
+  if(!settings.pinEnabled){ showApp(); }
+}
+
+function pinPress(k){
+  if(k==='del'){ pinBuffer=pinBuffer.slice(0,-1); }
+  else if(pinBuffer.length<4){ pinBuffer+=k; }
+  updatePinDots(pinBuffer,'pd','');
+  if(pinBuffer.length===4){
+    if(!settings.pinEnabled||pinBuffer===settings.pin){
+      showApp();
+    } else {
+      document.querySelectorAll('[id^=pd]').forEach(el=>el.classList.add('error'));
+      setTimeout(()=>{
+        pinBuffer='';
+        document.querySelectorAll('[id^=pd]').forEach(el=>{el.classList.remove('error','filled');});
+        document.getElementById('pin-hint').textContent='PIN incorrecto. Intenta de nuevo.';
+      },600);
+    }
+  }
+}
+
+function updatePinDots(buf,prefix,suffix){
+  for(let i=0;i<4;i++){
+    const el=document.getElementById(prefix+i+suffix);
+    if(!el) continue;
+    el.classList.toggle('filled',i<buf.length);
+  }
+}
+
+function showApp(){
+  document.getElementById('pin-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('fab-btn').style.display='flex';
+  pinBuffer='';
+  render();
+}
+
+function lockApp(){
+  if(!settings.pinEnabled){ showToast('⚠️ PIN no activado'); return; }
+  document.getElementById('app').style.display='none';
+  document.getElementById('fab-btn').style.display='none';
+  pinBuffer='';
+  updatePinDots('','pd','');
+  document.getElementById('pin-screen').style.display='flex';
+}
+
+function togglePin(on){
+  if(on){
+    startSetPin();
+  } else {
+    settings.pinEnabled=false;
+    settings.pin='';
+    saveSettings();
+    document.getElementById('pin-change-section').style.display='none';
+    showToast('🔓 PIN desactivado');
+  }
+}
+
+function startSetPin(){
+  setPinBuffer=''; setPinFirst='';
+  document.getElementById('setpin-title').textContent='Crear PIN nuevo';
+  updatePinDots('','spd','');
+  openModal('setpin-modal');
+}
+
+function setPinPress(k){
+  if(k==='del'){ setPinBuffer=setPinBuffer.slice(0,-1); }
+  else if(setPinBuffer.length<4){ setPinBuffer+=k; }
+  updatePinDots(setPinBuffer,'spd','');
+  if(setPinBuffer.length===4){
+    if(!setPinFirst){
+      setPinFirst=setPinBuffer;
+      setPinBuffer='';
+      document.getElementById('setpin-title').textContent='Confirma tu PIN';
+      updatePinDots('','spd','');
+    } else {
+      if(setPinBuffer===setPinFirst){
+        settings.pin=setPinFirst;
+        settings.pinEnabled=true;
+        saveSettings();
+        closeModal('setpin-modal');
+        document.getElementById('pin-toggle').checked=true;
+        document.getElementById('pin-change-section').style.display='block';
+        showToast('🔒 PIN activado');
+      } else {
+        for(let i=0;i<4;i++) document.getElementById('spd'+i).classList.add('error');
+        setTimeout(()=>{
+          setPinBuffer=''; setPinFirst='';
+          document.getElementById('setpin-title').textContent='No coinciden. Intenta de nuevo';
+          for(let i=0;i<4;i++){ const e=document.getElementById('spd'+i); e.classList.remove('error','filled'); }
+        },600);
+      }
+    }
+  }
+}
+
+// ===== MODAL =====
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function closeOnOverlay(e,id){ if(e.target.classList.contains('modal-overlay')) closeModal(id); }
+
+// ===== TOAST =====
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ===== THEME =====
+function setTheme(theme){
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('theme-'+theme);
+  if(el) el.classList.add('active');
+  document.documentElement.setAttribute('data-theme',theme==='dark'?'':theme);
+  settings.theme=theme; saveSettings();
+  showToast('🎨 Tema aplicado');
+}
+function applyTheme(){
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('theme-'+settings.theme);
+  if(el) el.classList.add('active');
+  document.documentElement.setAttribute('data-theme',settings.theme==='dark'?'':settings.theme);
+}
+
+// ===== CURRENCY =====
+function buildCurrencyGrid(){
+  const g=document.getElementById('currency-grid');
+  g.innerHTML=Object.keys(CURRENCIES).map(c=>`<button class="currency-btn${c===settings.currency?' active':''}" onclick="setCurrency('${c}')">${CURRENCIES[c]} ${c}</button>`).join('');
+}
+function setCurrency(c){
+  settings.currency=c; saveSettings();
+  buildCurrencyGrid(); render();
+  showToast('💱 Moneda: '+c);
+}
+
+// ===== REMINDER =====
+function updateReminder(v){
+  settings.reminderDays=parseInt(v);
+  document.getElementById('reminder-val').textContent=v;
+  saveSettings();
+}
+
+// ===== MESSAGES =====
+const defaultMessages={
+  soon:'Hola {nombre} 👋, mañana vence tu pago de *{total}*. Por favor prepara la transferencia. ¡Gracias! 😊',
+  today:'Hola {nombre} 👋, *hoy es el día de pago* por *{total}*. Por favor realiza tu pago. ¡Gracias!',
+  overdue:'Hola {nombre}, tu pago de *{total}* venció el {fecha} y aún tienes *{pendiente}* pendiente. Por favor contáctame. Gracias.',
+  ok:'Hola {nombre} 👋, tienes un pago pendiente de *{total}* con fecha límite el *{fecha}*. ¡Gracias!'
+};
+function switchMsgTab(tab,el){
+  document.querySelectorAll('.msg-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentMsgTab=tab;
+  document.getElementById('msg-editor').value=settings.messages[tab]||defaultMessages[tab];
+}
+function saveMessages(){
+  settings.messages[currentMsgTab]=document.getElementById('msg-editor').value;
+  saveSettings(); showToast('✅ Mensaje guardado');
+}
+function resetMsg(){
+  settings.messages[currentMsgTab]=defaultMessages[currentMsgTab];
+  document.getElementById('msg-editor').value=settings.messages[currentMsgTab];
+  saveSettings(); showToast('↩ Restaurado');
+}
+
+function buildMessage(d){
+  const status=getStatus(d);
+  const total=getTotal(d);
+  const pendiente=getPendiente(d);
+  const interesStr=d.interes>0?`, interés ${d.interes}%`:'';
+  return (settings.messages[status]||defaultMessages[status])
+    .replace(/{nombre}/g,d.nombre)
+    .replace(/{total}/g,formatMoney(total))
+    .replace(/{capital}/g,formatMoney(d.monto))
+    .replace(/{interes}/g,interesStr)
+    .replace(/{fecha}/g,formatDate(d.fecha))
+    .replace(/{nota}/g,d.nota||'')
+    .replace(/{pendiente}/g,formatMoney(pendiente));
+}
+
+// ===== CRUD =====
+function addDebtor(){
+  const nombre=document.getElementById('inp-nombre').value.trim();
+  const telefono=document.getElementById('inp-telefono').value.trim();
+  const monto=parseFloat(document.getElementById('inp-monto').value);
+  const interes=parseFloat(document.getElementById('inp-interes').value)||0;
+  const mora=parseFloat(document.getElementById('inp-mora').value)||0;
+  const fecha=document.getElementById('inp-fecha').value;
+  const cuotas=parseInt(document.getElementById('inp-cuotas').value)||1;
+  const frecuencia=parseInt(document.getElementById('inp-frecuencia').value)||30;
+  const nota=document.getElementById('inp-nota').value.trim();
+  const notaInterna=document.getElementById('inp-nota-interna').value.trim();
+  if(!nombre||!telefono||!monto||!fecha){showToast('⚠️ Completa los campos obligatorios');return;}
+
+  const cuotasList=[];
+  if(cuotas>1){
+    const montoCuota=monto/cuotas;
+    for(let i=0;i<cuotas;i++){
+      cuotasList.push({num:i+1,monto:montoCuota,fecha:addDays(fecha,i*frecuencia),pagada:false});
+    }
+  }
+
+  debtors.push({id:Date.now(),nombre,telefono,monto,interes,mora,fecha,nota,notaInterna,cuotas:cuotasList,pagos:[],creado:todayStr()});
+  saveData(); closeModal('add-modal');
+  ['inp-nombre','inp-telefono','inp-monto','inp-interes','inp-mora','inp-fecha','inp-cuotas','inp-frecuencia','inp-nota','inp-nota-interna'].forEach(id=>document.getElementById(id).value='');
+  render(); showToast('✅ Deudor guardado');
+}
+
+function deleteDebtor(id){
+  if(!confirm('¿Eliminar este deudor?')) return;
+  debtors=debtors.filter(d=>d.id!==id); saveData(); render(); showToast('🗑️ Eliminado');
+}
+
+function markPaid(id){
+  if(!confirm('¿Marcar como pagado en su totalidad?')) return;
+  const d=debtors.find(x=>x.id===id);
+  if(!d) return;
+  const pendiente=getPendiente(d);
+  d.pagos.push({monto:pendiente,fecha:todayStr(),nota:'Pago completo'});
+  saveData(); render(); showToast('💚 ¡Pago registrado!');
+}
+
+function openPartial(id){
+  const d=debtors.find(x=>x.id===id);
+  if(!d) return;
+  currentPartialId=id;
+  document.getElementById('partial-info').textContent=`${d.nombre} · Pendiente: ${formatMoney(getPendiente(d))}`;
+  document.getElementById('inp-abono').value='';
+  document.getElementById('inp-abono-nota').value='';
+  openModal('partial-modal');
+}
+
+function registerAbono(){
+  const d=debtors.find(x=>x.id===currentPartialId);
+  if(!d) return;
+  const monto=parseFloat(document.getElementById('inp-abono').value);
+  const nota=document.getElementById('inp-abono-nota').value.trim();
+  if(!monto||monto<=0){showToast('⚠️ Ingresa un monto válido');return;}
+  if(monto>getPendiente(d)){showToast('⚠️ El abono supera el saldo pendiente');return;}
+  d.pagos.push({monto,fecha:todayStr(),nota:nota||'Abono'});
+  saveData(); closeModal('partial-modal'); render();
+  showToast('💵 Abono de '+formatMoney(monto)+' registrado');
+}
+
+function openHistory(id){
+  const d=debtors.find(x=>x.id===id);
+  if(!d) return;
+  document.getElementById('history-title').textContent='📋 Historial: '+d.nombre;
+  const list=document.getElementById('history-list');
+  if(!d.pagos||d.pagos.length===0){
+    list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);">Sin pagos registrados</div>';
+  } else {
+    list.innerHTML=[...d.pagos].reverse().map(p=>`
+      <div class="history-item">
+        <div><div class="history-date">${formatDate(p.fecha)}</div><div style="font-size:12px;color:var(--muted)">${p.nota||'Pago'}</div></div>
+        <div class="history-amount">${formatMoney(p.monto)}</div>
+      </div>`).join('');
+  }
+  openModal('history-modal');
+}
+
+function sendWhatsApp(id){
+  const d=debtors.find(x=>x.id===id);
+  if(!d) return;
+  const msg=buildMessage(d);
+  window.open(`https://wa.me/${d.telefono}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+// ===== BULK WA =====
+function sendMasivo(){
+  const t=todayStr();
+  const remind=addDays(t,settings.reminderDays);
+  const targets=debtors.filter(d=>{
+    const s=getStatus(d);
+    return s==='soon'||s==='today'||s==='overdue';
+  });
+  if(targets.length===0){showToast('✅ No hay deudores urgentes');closeModal('export-modal');return;}
+  closeModal('export-modal');
+  let i=0;
+  function next(){
+    if(i>=targets.length) return;
+    const d=targets[i++];
+    const msg=buildMessage(d);
+    window.open(`https://wa.me/${d.telefono}?text=${encodeURIComponent(msg)}`,'_blank');
+    if(i<targets.length) setTimeout(next,1500);
+  }
+  showToast(`📲 Enviando a ${targets.length} deudores...`);
+  next();
+}
+
+// ===== EXPORT =====
+function exportCSV(){
+  const headers=['Nombre','Teléfono','Monto','Interés%','Mora%','Total','Pagado','Pendiente','Fecha','Estado','Nota'];
+  const rows=debtors.map(d=>[
+    d.nombre,d.telefono,d.monto,d.interes,d.mora||0,
+    getTotal(d).toFixed(2),getPaid(d).toFixed(2),getPendiente(d).toFixed(2),
+    d.fecha,getStatus(d),d.nota||''
+  ]);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='deudas_wizard.csv'; a.click();
+  URL.revokeObjectURL(url);
+  closeModal('export-modal'); showToast('📊 CSV exportado');
+}
+
+function exportPDF(){
+  const t=todayStr();
+  const totalPrestado=debtors.reduce((s,d)=>s+getTotal(d),0);
+  const totalPendiente=debtors.reduce((s,d)=>s+getPendiente(d),0);
+  const rows=debtors.map(d=>{
+    const status=getStatus(d);
+    const colors={overdue:'#ff4d4d',today:'#ffb800',soon:'#00e07a',ok:'#aaa',paid:'#555'};
+    return `<tr><td>${d.nombre}</td><td>${formatMoney(getTotal(d))}</td><td style="color:${colors[status]||'#aaa'}">${formatMoney(getPendiente(d))}</td><td>${formatDate(d.fecha)}</td><td>${d.nota||''}</td></tr>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:20px;}h1{color:#00e07a;}table{width:100%;border-collapse:collapse;margin-top:16px;}th{background:#0a0f0d;color:#00e07a;padding:10px;text-align:left;}td{padding:8px;border-bottom:1px solid #eee;}tfoot td{font-weight:bold;background:#f5f5f5;}</style></head><body><h1>💸 Reporte Deudas Wizard</h1><p>Fecha: ${formatDate(t)} · Moneda: ${settings.currency}</p><table><thead><tr><th>Nombre</th><th>Total</th><th>Pendiente</th><th>Vence</th><th>Nota</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td>TOTAL (${debtors.length} deudores)</td><td>${formatMoney(totalPrestado)}</td><td>${formatMoney(totalPendiente)}</td><td colspan="2"></td></tr></tfoot></table></body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html); w.document.close();
+  setTimeout(()=>w.print(),500);
+  closeModal('export-modal');
+}
+
+function exportJSON(){
+  const data=JSON.stringify({debtors,settings,exportado:todayStr()},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='deudas_wizard_backup.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📦 Respaldo descargado');
+}
+
+function importJSON(){ document.getElementById('import-file').click(); }
+function doImport(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(data.debtors){ debtors=data.debtors; saveData(); }
+      if(data.settings){ settings=data.settings; saveSettings(); applyTheme(); }
+      render(); showToast('📥 Datos restaurados');
+    } catch(err){ showToast('❌ Error al importar'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+// ===== VIEW =====
+function switchView(view,el){
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentView=view;
+  document.getElementById('view-deudores').style.display=view==='deudores'?'block':'none';
+  document.getElementById('view-graficas').style.display=view==='graficas'?'block':'none';
+  if(view==='graficas') renderCharts();
+}
+
+// ===== CHARTS =====
+function renderCharts(){
+  const t=todayStr();
+  const counts={overdue:0,today:0,soon:0,ok:0,paid:0};
+  const montos={overdue:0,today:0,soon:0,ok:0,paid:0};
+  debtors.forEach(d=>{const s=getStatus(d);counts[s]++;montos[s]+=getPendiente(d);});
+
+  const labels={overdue:'Vencido',today:'Hoy',soon:'Pronto',ok:'Activo',paid:'Pagado'};
+  const colors={overdue:'#ff4d4d',today:'#ffb800',soon:'var(--accent)',ok:'var(--muted)',paid:'#555'};
+  const keys=['overdue','today','soon','ok'];
+  const maxMonto=Math.max(...keys.map(k=>montos[k]),1);
+  const maxCount=Math.max(...keys.map(k=>counts[k]),1);
+
+  document.getElementById('chart-estado').innerHTML=`
+    <div class="chart-title">Deudores por estado</div>
+    <div class="chart-bars">${keys.map(k=>`<div class="chart-bar-wrap"><div class="chart-bar" style="height:${(counts[k]/maxCount*80)}px;background:${colors[k]};"></div><div class="chart-label">${labels[k]}<br><b>${counts[k]}</b></div></div>`).join('')}</div>`;
+
+  document.getElementById('chart-montos').innerHTML=`
+    <div class="chart-title">Montos pendientes por estado</div>
+    <div class="chart-bars">${keys.map(k=>`<div class="chart-bar-wrap"><div class="chart-bar" style="height:${(montos[k]/maxMonto*80)}px;background:${colors[k]};"></div><div class="chart-label">${labels[k]}<br><b>${formatMoney(montos[k])}</b></div></div>`).join('')}</div>
+    <div class="chart-legend">${keys.map(k=>`<div class="legend-item"><div class="legend-dot" style="background:${colors[k]}"></div>${labels[k]}</div>`).join('')}</div>`;
+}
+
+// ===== RENDER =====
+function render(){
+  const t=todayStr(), remind=addDays(t,settings.reminderDays);
+  const totalPrestado=debtors.reduce((s,d)=>s+getTotal(d),0);
+  const totalPendiente=debtors.reduce((s,d)=>s+getPendiente(d),0);
+  const totalVencidas=debtors.filter(d=>getStatus(d)==='overdue').reduce((s,d)=>s+getPendiente(d),0);
+  const totalHoy=debtors.filter(d=>getStatus(d)==='today').reduce((s,d)=>s+getPendiente(d),0);
+
+  document.getElementById('summary-grid').innerHTML=`
+    <div class="sum-card"><div class="sum-label">Total prestado</div><div class="sum-value">${formatMoney(totalPrestado)}</div></div>
+    <div class="sum-card danger"><div class="sum-label">Vencidas</div><div class="sum-value">${formatMoney(totalVencidas)}</div></div>
+    <div class="sum-card warning"><div class="sum-label">Cobrar hoy</div><div class="sum-value">${formatMoney(totalHoy)}</div></div>
+    <div class="sum-card purple"><div class="sum-label">Pendiente total</div><div class="sum-value">${formatMoney(totalPendiente)}</div></div>`;
+
+  const pronto=debtors.filter(d=>getStatus(d)==='soon');
+  const alertContainer=document.getElementById('alert-container');
+  alertContainer.innerHTML=pronto.length>0
+    ?`<div class="alert-banner"><span class="alert-icon">⚠️</span><div class="alert-text"><strong>¡${pronto.length} deudor${pronto.length>1?'es':''} vence${pronto.length>1?'n':''} pronto!</strong>Toca WhatsApp para avisar.</div><button class="alert-wa-btn" onclick="sendMasivo()">Avisar a todos</button></div>`
+    :'';
+
+  const list=document.getElementById('debtor-list');
+  if(debtors.length===0){
+    list.innerHTML='<div class="empty-state"><div class="empty-icon">🧾</div><p>No hay deudores.<br>Toca <strong>+</strong> para agregar.</p></div>';
+    return;
+  }
+
+  const sorted=[...debtors].filter(d=>getStatus(d)!=='paid').sort((a,b)=>{
+    const o={overdue:0,today:1,soon:2,ok:3,paid:4};
+    return o[getStatus(a)]-o[getStatus(b)]||a.fecha.localeCompare(b.fecha);
+  });
+
+  const waIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+  list.innerHTML=sorted.map((d,i)=>{
+    const status=getStatus(d);
+    const total=getTotal(d);
+    const paid=getPaid(d);
+    const pendiente=getPendiente(d);
+    const pct=total>0?Math.min(100,(paid/total)*100):0;
+    const mora=getMoraExtra(d);
+
+    const badges={overdue:'<span class="status-badge badge-overdue">⚠️ Vencido</span>',today:'<span class="status-badge badge-today">📅 Hoy</span>',soon:'<span class="status-badge badge-soon">🔔 Pronto</span>',ok:'<span class="status-badge badge-ok">✅ Activo</span>'};
+    const dateClass=status==='overdue'?'overdue-date':status==='today'?'today-date':'';
+
+    let cuotasHTML='';
+    if(d.cuotas&&d.cuotas.length>1){
+      cuotasHTML=`<div class="cuotas-row">${d.cuotas.map(c=>{
+        const cls=c.pagada?'cuota-paid':c.fecha<t?'cuota-overdue':'cuota-pending';
+        return `<span class="cuota-chip ${cls}">C${c.num}</span>`;
+      }).join('')}</div>`;
+    }
+
+    const notaInternaHTML=d.notaInterna?`<div class="internal-note">🔒 ${d.notaInterna}</div>`:'';
+
+    const moraHTML=mora>0?`<span style="color:var(--danger);font-size:11px"> +${formatMoney(mora)} mora</span>`:'';
+
+    return `
+    <div class="debtor-card ${status==='overdue'?'overdue':status==='today'?'due-today':status==='soon'?'due-soon':''}" style="animation-delay:${i*.05}s">
+      <div class="card-top">
+        <div class="debtor-info">
+          <div class="avatar">${getInitials(d.nombre)}</div>
+          <div>
+            <div class="debtor-name">${d.nombre}</div>
+            <div class="debtor-phone">📱 ${d.telefono}</div>
+          </div>
+        </div>
+        ${badges[status]||''}
+      </div>
+      <div class="card-amounts">
+        <div><div class="amount-label">Capital</div><div class="amount-value">${formatMoney(d.monto)}</div></div>
+        <div><div class="amount-label">Total+int</div><div class="amount-value">${formatMoney(total)}${moraHTML}</div></div>
+        <div><div class="amount-label">Pendiente</div><div class="amount-value ${pendiente>0?'red':'green'}">${formatMoney(pendiente)}</div></div>
+      </div>
+      ${paid>0?`<div class="progress-wrap"><div class="progress-info"><span>Pagado: ${formatMoney(paid)}</span><span>${pct.toFixed(0)}%</span></div><div class="progress-bar-bg"><div class="progress-bar-fill${pct<100?' partial':''}" style="width:${pct}%"></div></div></div>`:''}
+      ${cuotasHTML}
+      <div class="date-row ${dateClass}">📆 Vence: <strong>${formatDate(d.fecha)}</strong>${d.nota?`&nbsp;·&nbsp;📝 ${d.nota}`:''}</div>
+      ${notaInternaHTML}
+      <div class="card-actions">
+        <button class="btn btn-wa" onclick="sendWhatsApp(${d.id})">${waIcon} WhatsApp</button>
+        <button class="btn btn-partial" onclick="openPartial(${d.id})" title="Abono">💵</button>
+        <button class="btn btn-history" onclick="openHistory(${d.id})" title="Historial">📋</button>
+        <button class="btn btn-paid" onclick="markPaid(${d.id})" title="Pagado">✓</button>
+        <button class="btn btn-delete" onclick="deleteDebtor(${d.id})" title="Eliminar">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  if(currentView==='graficas') renderCharts();
+}
+
+async function testTelegram(){
+  showToast('🧪 Probando conexión...');
+  const ok=await sendTelegram('✅ *Deudas Wizard* conectado correctamente a Telegram 🎉\n\nRecibirás recordatorios automáticos aquí cada día.');
+  if(ok){ showToast('✅ ¡Conexión exitosa! Revisa Telegram'); }
+  else { showToast('❌ Error. Verifica tu conexión a internet'); }
+}
+
+// ===== TELEGRAM =====
+const TG_TOKEN = '8664979281:AAFxGTn6vH3xAXSz0EksUPUFqhVHgHFEbi8';
+const TG_CHAT  = '8680034556';
+
+async function sendTelegram(msg){
+  try{
+    const url=`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`;
+    const res=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:TG_CHAT, text:msg, parse_mode:'Markdown'})
+    });
+    const data=await res.json();
+    return data.ok;
+  } catch(e){ return false; }
+}
+
+async function checkAndNotify(){
+  const t=todayStr();
+  const remind=addDays(t,settings.reminderDays);
+  const lastCheck=localStorage.getItem('dw_last_notify')||'';
+  if(lastCheck===t) return; // solo notifica una vez por día
+
+  const vencidoHoy=debtors.filter(d=>d.fecha===t&&getPendiente(d)>0);
+  const proximos=debtors.filter(d=>d.fecha===remind&&getPendiente(d)>0);
+  const vencidos=debtors.filter(d=>d.fecha<t&&getPendiente(d)>0);
+
+  const lines=[];
+
+  if(vencidoHoy.length>0){
+    lines.push(`📅 *VENCEN HOY (${vencidoHoy.length}):*`);
+    vencidoHoy.forEach(d=>lines.push(`• ${d.nombre}: ${formatMoney(getPendiente(d))}`));
+  }
+
+  if(proximos.length>0){
+    lines.push(`\n🔔 *VENCEN EN ${settings.reminderDays} DÍA(S) (${proximos.length}):*`);
+    proximos.forEach(d=>lines.push(`• ${d.nombre}: ${formatMoney(getPendiente(d))} — ${formatDate(d.fecha)}`));
+  }
+
+  if(vencidos.length>0){
+    lines.push(`\n⚠️ *VENCIDOS SIN PAGAR (${vencidos.length}):*`);
+    vencidos.forEach(d=>lines.push(`• ${d.nombre}: ${formatMoney(getPendiente(d))} (venció ${formatDate(d.fecha)})`));
+  }
+
+  if(lines.length>0){
+    const msg=`💸 *Deudas Wizard — Reporte diario*\n\n${lines.join('\n')}`;
+    const ok=await sendTelegram(msg);
+    if(ok){
+      localStorage.setItem('dw_last_notify',t);
+      showToast('📲 Reporte enviado a Telegram');
+    }
+  } else {
+    localStorage.setItem('dw_last_notify',t);
+  }
+}
+
+async function sendTelegramManual(){
+  const t=todayStr();
+  const vencidoHoy=debtors.filter(d=>d.fecha===t&&getPendiente(d)>0);
+  const remind=addDays(t,settings.reminderDays);
+  const proximos=debtors.filter(d=>d.fecha===remind&&getPendiente(d)>0);
+  const vencidos=debtors.filter(d=>d.fecha<t&&getPendiente(d)>0);
+  const todos=debtors.filter(d=>getPendiente(d)>0);
+  const totalPendiente=todos.reduce((s,d)=>s+getPendiente(d),0);
+
+  const lines=[
+    `💸 *Deudas Wizard — Reporte Manual*`,
+    `📆 Fecha: ${formatDate(t)}`,
+    ``,
+    `💰 *Total pendiente:* ${formatMoney(totalPendiente)}`,
+    `👥 *Deudores activos:* ${todos.length}`,
+  ];
+
+  if(vencidoHoy.length>0){
+    lines.push(`\n📅 *VENCEN HOY:*`);
+    vencidoHoy.forEach(d=>lines.push(`• ${d.nombre}: ${formatMoney(getPendiente(d))} — 📱 +${d.telefono}`));
+  }
+  if(proximos.length>0){
+    lines.push(`\n🔔 *PRÓXIMOS A VENCER:*`);
+    proximos.forEach(d=>lines.push(`• ${d.nombre}: ${formatMoney(getPendiente(d))} — Vence ${formatDate(d.fecha)}`));
+  }
+  if(vencidos.length>0){
+    lines.push(`\n⚠️ *VENCIDOS:*`);
+    vencidos.forEach(d=>lines.push(`• ${d.nombre}: ${formatMoney(getPendiente(d))} — Venció ${formatDate(d.fecha)}`));
+  }
+
+  showToast('📤 Enviando a Telegram...');
+  const ok=await sendTelegram(lines.join('\n'));
+  if(ok){ showToast('✅ Reporte enviado a Telegram'); }
+  else { showToast('❌ Error al enviar. Verifica tu conexión.'); }
+}
+
+// ===== BROWSER NOTIFICATIONS =====
+async function requestNotifPermission(){
+  if(!('Notification' in window)){ showToast('⚠️ Tu navegador no soporta notificaciones'); return false; }
+  if(Notification.permission==='granted') return true;
+  const perm=await Notification.requestPermission();
+  return perm==='granted';
+}
+
+function sendBrowserNotif(title,body,icon='💸'){
+  if(Notification.permission!=='granted') return;
+  new Notification(`${icon} ${title}`,{body,icon:'/favicon.ico',badge:'/favicon.ico'});
+}
+
+function checkBrowserNotifs(){
+  if(Notification.permission!=='granted') return;
+  const t=todayStr(), remind=addDays(t,settings.reminderDays);
+  const hoy=debtors.filter(d=>d.fecha===t&&getPendiente(d)>0);
+  const pronto=debtors.filter(d=>d.fecha===remind&&getPendiente(d)>0);
+  const vencidos=debtors.filter(d=>d.fecha<t&&getPendiente(d)>0);
+
+  if(hoy.length>0) sendBrowserNotif('¡Cobros de hoy!',hoy.map(d=>d.nombre).join(', '),'📅');
+  if(pronto.length>0) sendBrowserNotif('Vencen pronto',pronto.map(d=>d.nombre).join(', '),'🔔');
+  if(vencidos.length>0) sendBrowserNotif('Deudas vencidas',`${vencidos.length} deudores sin pagar`,'⚠️');
+}
+
+// ===== INIT =====
+function initSettings(){
+  applyTheme();
+  buildCurrencyGrid();
+  document.getElementById('reminder-slider').value=settings.reminderDays;
+  document.getElementById('reminder-val').textContent=settings.reminderDays;
+  document.getElementById('pin-toggle').checked=settings.pinEnabled;
+  document.getElementById('pin-change-section').style.display=settings.pinEnabled?'block':'none';
+  document.getElementById('msg-editor').value=settings.messages['soon']||defaultMessages['soon'];
+  document.getElementById('inp-fecha').min=todayStr();
+}
+
+document.addEventListener('DOMContentLoaded',async ()=>{
+  initSettings();
+  checkPin();
+  // Pedir permiso de notificaciones del navegador
+  await requestNotifPermission();
+  // Revisar y notificar al abrir la app
+  setTimeout(()=>{
+    checkBrowserNotifs();
+    checkAndNotify();
+  }, 2000);
+  // Revisar cada hora mientras la app está abierta
+  setInterval(()=>{
+    checkBrowserNotifs();
+    checkAndNotify();
+  }, 3600000);
+});
+</script>
+</body>
+</html>
